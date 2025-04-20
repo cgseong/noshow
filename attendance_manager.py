@@ -127,24 +127,19 @@ def get_csv_download_link(df, filename):
     return csv
 
 # 메인 애플리케이션 로직
-def main():
-    # 데이터 소스 선택
-    data_source = st.radio(
-        "데이터 소스 선택",
-        ["CSV 파일 업로드", "샘플 데이터 사용"],
-        horizontal=True
-    )
-    
+def main():       
     # 데이터 로드
     df = None
-    if data_source == "CSV 파일 업로드":
+    try:
+        # 기본적으로 attendance.csv 파일 로드 시도
+        df = pd.read_csv('attendance.csv')
+        st.success("attendance.csv 파일이 성공적으로 로드되었습니다.")
+    except Exception as e:
+        # 기본 파일 로드 실패 시 사용자 업로드 확인
         if uploaded_file is not None:
             df = process_csv_file(uploaded_file)
         else:
-            st.info("CSV 파일을 업로드해주세요.")
-    else:
-        df = create_sample_data()
-        st.success("샘플 데이터가 로드되었습니다.")
+            st.error("attendance.csv 파일을 찾을 수 없습니다. CSV 파일을 업로드해주세요.")
     
     # 데이터 처리 및 분석
     if df is not None:
