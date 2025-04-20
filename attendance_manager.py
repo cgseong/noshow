@@ -23,7 +23,6 @@ DATA_DIR = "data"
 LECTURE_FILE = os.path.join(DATA_DIR, "lectures.json")
 STUDENT_FILE = os.path.join(DATA_DIR, "students.json")
 ATTENDANCE_FILE = os.path.join(DATA_DIR, "attendance.json")
-ATTENDANCE_CSV = os.path.join(DATA_DIR, "attendance.csv")  # 새로 추가된 CSV 파일 경로
 
 # 디렉토리 생성
 if not os.path.exists(DATA_DIR):
@@ -59,44 +58,7 @@ def load_data():
     
     # 출결 데이터 로드
     if "attendance" not in st.session_state:
-        # 먼저 attendance.csv 파일 확인
-        if os.path.exists(ATTENDANCE_CSV):
-            try:
-                # CSV 파일에서 출결 데이터 로드
-                df = pd.read_csv(ATTENDANCE_CSV, encoding='utf-8')
-                attendance_list = df.to_dict('records')
-                
-                # JSON 형식으로 변환
-                st.session_state.attendance = []
-                for item in attendance_list:
-                    # CSV에서 불러온 데이터 형식을 JSON에 맞게 조정
-                    attendance_entry = {
-                        "id": str(item.get("id", uuid.uuid4())),
-                        "lecture_id": str(item.get("lecture_id", "")),
-                        "student_id": str(item.get("student_id", "")),
-                        "date": item.get("date", ""),
-                        "status": item.get("status", ""),
-                        "time": item.get("time", ""),
-                        "reason": item.get("reason", "")
-                    }
-                    st.session_state.attendance.append(attendance_entry)
-                
-                # JSON 파일로도 저장
-                save_data()
-                
-            except Exception as e:
-                st.error(f"CSV 파일 로드 오류: {e}")
-                # CSV 로드에 실패하면 JSON 파일 확인
-                if os.path.exists(ATTENDANCE_FILE):
-                    try:
-                        with open(ATTENDANCE_FILE, "r", encoding="utf-8") as f:
-                            st.session_state.attendance = json.load(f)
-                    except:
-                        st.session_state.attendance = []
-                else:
-                    st.session_state.attendance = []
-        # CSV 파일이 없으면 JSON 파일 확인
-        elif os.path.exists(ATTENDANCE_FILE):
+        if os.path.exists(ATTENDANCE_FILE):
             try:
                 with open(ATTENDANCE_FILE, "r", encoding="utf-8") as f:
                     st.session_state.attendance = json.load(f)
@@ -118,13 +80,6 @@ def save_data():
     # 출결 데이터 저장
     with open(ATTENDANCE_FILE, "w", encoding="utf-8") as f:
         json.dump(st.session_state.attendance, f, ensure_ascii=False, indent=4)
-    
-    # 출결 데이터를 CSV로도 저장
-    try:
-        df = pd.DataFrame(st.session_state.attendance)
-        df.to_csv(ATTENDANCE_CSV, index=False, encoding='utf-8-sig')
-    except Exception as e:
-        st.error(f"CSV 파일 저장 오류: {e}")
 
 # 날짜 형식 변환 함수
 def format_date(date_str):
@@ -305,48 +260,13 @@ def get_lecture_attendance_summary(lecture_id):
     
     return pd.DataFrame(results)
 
-# 노쇼 학생 목록 가져오기 (특정 날짜에 출석 체크되지 않은 학생 목록)
-def get_no_show_students(date):
-    no_show_data = []
-    
-    # 진행 중인 특강 확인
-    ongoing_lectures = [l for l in st.session_state.lectures if l["status"] == "진행 중"]
-    
-    for lecture in ongoing_lectures:
-        lecture_id = lecture["id"]
-        
-        # 특강에 등록된 학생
-        enrolled_students = [s for s in st.session_state.students if lecture_id in s.get("enrolled_lectures", [])]
-        
-        # 해당 날짜의 출석 데이터
-        attendance_data = get_attendance_data(lecture_id, date)
-        
-        # 출석 체크된 학생 ID 목록
-        checked_student_ids = [a["student_id"] for a in attendance_data]
-        
-        # 출석 체크되지 않은 학생 찾기
-        for student in enrolled_students:
-            if student["id"] not in checked_student_ids:
-                no_show_data.append({
-                    "특강명": lecture["name"],  # 특강명 추가
-                    "학생ID": student["id"],
-                    "이름": student["name"],
-                    "학번": student["student_id"],
-                    "학과": student["department"],
-                    "학년": student["grade"],
-                    "연락처": student.get("phone", "-"),
-                    "이메일": student.get("email", "-")
-                })
-    
-    return pd.DataFrame(no_show_data)
-
 # 로드 데이터
 load_data()
 update_lecture_status()
 
 # 사이드바 메뉴
 st.sidebar.title("특강 출결 관리 시스템")
-menu = st.sidebar.radio("메뉴", ["대시보드", "특강 관리", "학생 관리", "출결 관리", "통계 및 보고서", "노쇼 학생 관리", "설정"])
+menu = st.sidebar.radio("메뉴", ["대시보드", "특강 관리", "학생 관리", "출결 관리", "통계 및 보고서", "설정"])
 
 # 대시보드
 if menu == "대시보드":
@@ -434,7 +354,7 @@ if menu == "대시보드":
     else:
         st.success("모든 진행 중인 특강의 오늘 출석체크가 완료되었습니다.")
     
-    # 예정된 특강
+    # 최근 추가된 특강
     st.subheader("📅 예정된 특강")
     upcoming_lectures = [l for l in st.session_state.lectures if l["status"] == "예정"]
     
@@ -458,6 +378,9 @@ elif menu == "특강 관리":
     tab1, tab2 = st.tabs(["특강 목록", "특강 등록"])
     
     # 특강 목록 탭
+    # 특강 목록 탭의 코드를 다음과 같이 수정하세요
+# 위치: "특강 관리" 메뉴의 "특강 목록" 탭 내 코드
+
     with tab1:
         st.subheader("등록된 특강 목록")
         
@@ -707,6 +630,8 @@ elif menu == "특강 관리":
                 st.rerun()
     
     # 특강 등록 탭
+    # 특강 등록 탭 부분 수정 (아래 코드로 교체)
+    # 특강 등록 탭 (이 부분이 추가/수정된 내용입니다)
     with tab2:
         st.subheader("새 특강 등록")
 
@@ -754,6 +679,10 @@ elif menu == "특강 관리":
                     lecture_id = add_new_lecture(new_lecture_data)
                     update_lecture_status() # 상태 즉시 업데이트
                     st.success(f"'{name}' 특강이 성공적으로 등록되었습니다. (ID: {lecture_id})")
+                    # st.rerun() # 필요시 폼 초기화를 위해 주석 해제
+# 위치: "특강 관리" 메뉴의 "특강 등록" 탭 내부
+
+    
 
 # 학생 관리
 elif menu == "학생 관리":
@@ -971,14 +900,12 @@ elif menu == "학생 관리":
             mime="text/csv"
         )
         
-        # CSV 파일 내용 직접 입력
-        csv_content = st.text_area("CSV 내용을 직접 입력하세요 (콤마로 구분)", height=200)
+        # CSV 파일 업로드
+        uploaded_file = st.file_uploader("CSV 파일 업로드", type=["csv"])
         
-        if csv_content:
+        if uploaded_file is not None:
             try:
-                # StringIO로 CSV 문자열을 데이터프레임으로 변환
-                import io
-                df = pd.read_csv(io.StringIO(csv_content), encoding="utf-8")
+                df = pd.read_csv(uploaded_file, encoding="utf-8")
                 
                 # 필수 컬럼 확인
                 required_columns = ["이름", "학번", "학과", "학년"]
@@ -1052,7 +979,7 @@ elif menu == "학생 관리":
                         st.rerun()
             
             except Exception as e:
-                st.error(f"CSV 내용 처리 중 오류가 발생했습니다: {e}")
+                st.error(f"CSV 파일 처리 중 오류가 발생했습니다: {e}")
 
 # 출결 관리
 elif menu == "출결 관리":
@@ -1888,6 +1815,7 @@ elif menu == "통계 및 보고서":
                     if file_format == "CSV":
                         csv = convert_df_to_csv(all_attendance_df)
                         download_filename = f"종합출결현황_{start_str}_{end_str}.csv"
+                        
                         st.download_button(
                             label="CSV 다운로드",
                             data=csv,
@@ -1908,93 +1836,6 @@ elif menu == "통계 및 보고서":
                     # 미리보기
                     with st.expander("보고서 미리보기"):
                         st.dataframe(all_attendance_df, use_container_width=True)
-
-# 노쇼 학생 관리 메뉴 (새로 추가된 부분)
-elif menu == "노쇼 학생 관리":
-    st.title("⚠️ 노쇼 학생 관리")
-    
-    # 날짜 선택
-    today = datetime.now().date()
-    selected_date = st.date_input("날짜 선택", value=today, max_value=today)
-    date_str = selected_date.strftime("%Y-%m-%d")
-    
-    # 노쇼 학생 데이터 가져오기
-    no_show_df = get_no_show_students(date_str)
-    
-    if no_show_df.empty:
-        st.success(f"{date_str}에 출석 체크가 필요한 학생이 없습니다.")
-    else:
-        # 노쇼 학생 수
-        no_show_count = len(no_show_df)
-        st.warning(f"총 {no_show_count}명의 학생이 {date_str}에 출석 체크되지 않았습니다.")
-        
-        # 노쇼 학생 목록 (특강명 추가됨)
-        st.subheader("출석 체크가 필요한 학생 목록")
-        
-        # 보여줄 컬럼 선택 (특강명 추가)
-        display_columns = ["특강명", "이름", "학번", "학과", "학년", "연락처", "이메일"]
-        st.dataframe(no_show_df[display_columns], use_container_width=True)
-        
-        # CSV 다운로드 버튼
-        csv = convert_df_to_csv(no_show_df[display_columns])
-        st.download_button(
-            label="CSV 다운로드",
-            data=csv,
-            file_name=f"출석미체크학생_{date_str}.csv",
-            mime="text/csv"
-        )
-        
-        # 일괄 출석 처리 옵션
-        st.subheader("일괄 출석 처리")
-        
-        # 특강 필터
-        unique_lectures = no_show_df["특강명"].unique()
-        selected_lecture = st.selectbox("특강 선택", options=["모든 특강"] + list(unique_lectures))
-        
-        if selected_lecture != "모든 특강":
-            filtered_df = no_show_df[no_show_df["특강명"] == selected_lecture]
-        else:
-            filtered_df = no_show_df
-        
-        # 출석 상태 선택
-        bulk_status = st.selectbox("일괄 출석 상태", options=ATTENDANCE_STATUS)
-        
-        # 사유 입력
-        if bulk_status in ["결석", "지각", "조퇴", "병가", "공결"]:
-            bulk_reason = st.text_area("사유")
-        else:
-            bulk_reason = ""
-        
-        # 일괄 처리 버튼
-        if st.button("선택한 특강의 학생 일괄 출석 처리"):
-            # 출석 시간 (현재 시간)
-            current_time = datetime.now().time().strftime("%H:%M")
-            processed_count = 0
-            
-            for _, row in filtered_df.iterrows():
-                student_id = row["학생ID"]
-                # 특강 ID 찾기
-                for lecture in st.session_state.lectures:
-                    if lecture["name"] == row["특강명"]:
-                        lecture_id = lecture["id"]
-                        
-                        # 출결 데이터 생성
-                        new_attendance = {
-                            "lecture_id": lecture_id,
-                            "student_id": student_id,
-                            "date": date_str,
-                            "status": bulk_status,
-                            "time": current_time,
-                            "reason": bulk_reason
-                        }
-                        
-                        # 출결 데이터 업데이트
-                        update_attendance(new_attendance)
-                        processed_count += 1
-                        break
-            
-            st.success(f"{processed_count}명의 학생 출결 정보가 일괄 처리되었습니다.")
-            st.rerun()
 
 # 설정
 elif menu == "설정":
@@ -2032,12 +1873,12 @@ elif menu == "설정":
         with col2:
             st.write("**데이터 복원**")
             
-            # 백업 내용 직접 입력
-            backup_content = st.text_area("백업 JSON 내용을 입력하세요", height=200)
+            # 백업 파일 업로드
+            uploaded_file = st.file_uploader("백업 파일 업로드", type=["json"])
             
-            if backup_content:
+            if uploaded_file is not None:
                 try:
-                    backup_data = json.loads(backup_content)
+                    backup_data = json.loads(uploaded_file.getvalue().decode("utf-8"))
                     
                     # 필수 키 확인
                     if "lectures" not in backup_data or "students" not in backup_data or "attendance" not in backup_data:
@@ -2112,3 +1953,5 @@ elif menu == "설정":
 # 푸터
 st.markdown("---")
 st.caption("© 2025 특강 프로그램 출결 관리 시스템 | Powered by Streamlit")
+                                         
+                                         
