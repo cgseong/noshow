@@ -34,16 +34,23 @@ try:
         
         file_path = os.path.join(folder_path, selected_file)
         st.success(f"선택된 파일: {selected_file}")
+        
+        # 수정된 함수를 사용하여 파일 처리
+        df = process_csv_file(file_path)
+        
+        if df is not None:
+            st.success("파일이 성공적으로 로드되었습니다.")
+        
     else:
         st.error(f"{folder_path} 폴더에 CSV 파일이 없습니다.")
-        file_path = None
+        df = None
 except FileNotFoundError:
     st.error(f"{folder_path} 폴더를 찾을 수 없습니다.")
-    file_path = None
+    df = None
 except Exception as e:
     st.error(f"파일 목록을 불러오는 중 오류가 발생했습니다: {e}")
-    file_path = None
-
+    df = None
+    
 # CSV 파일 처리 함수
 def process_csv_file(file):
     try:
