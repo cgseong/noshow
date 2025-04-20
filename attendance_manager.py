@@ -17,7 +17,32 @@ st.title("특강 노쇼 현황 분석")
 st.markdown("이 앱은 특강 출석 데이터를 분석하여 노쇼 현황을 보여줍니다.")
 
 # 파일 업로드 기능
-uploaded_file = st.file_uploader("CSV 파일 업로드", type=["csv"])
+#uploaded_file = st.file_uploader("CSV 파일 업로드", type=["csv"])
+
+folder_path = "./"  # 원하는 폴더 경로로 변경하세요
+try:
+    # 폴더 내 모든 CSV 파일 목록 가져오기
+    csv_files = [f for f in os.listdir(folder_path) if f.endswith('.csv')]
+    
+    if csv_files:
+        # 파일 선택 드롭다운 생성
+        selected_file = st.selectbox(
+            "분석할 CSV 파일 선택", 
+            options=csv_files,
+            format_func=lambda x: x
+        )
+        
+        file_path = os.path.join(folder_path, selected_file)
+        st.success(f"선택된 파일: {selected_file}")
+    else:
+        st.error(f"{folder_path} 폴더에 CSV 파일이 없습니다.")
+        file_path = None
+except FileNotFoundError:
+    st.error(f"{folder_path} 폴더를 찾을 수 없습니다.")
+    file_path = None
+except Exception as e:
+    st.error(f"파일 목록을 불러오는 중 오류가 발생했습니다: {e}")
+    file_path = None
 
 # CSV 파일 처리 함수
 def process_csv_file(file):
