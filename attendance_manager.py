@@ -132,7 +132,7 @@ def main():
     df = None
     try:
         # 기본적으로 attendance.csv 파일 로드 시도
-        df = pd.read_csv('attendance.csv')
+        df = pd.read_csv('./attendance.csv')
         st.success("attendance.csv 파일이 성공적으로 로드되었습니다.")
     except Exception as e:
         # 기본 파일 로드 실패 시 사용자 업로드 확인
