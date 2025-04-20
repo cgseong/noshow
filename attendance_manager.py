@@ -128,19 +128,39 @@ def get_csv_download_link(df, filename):
 
 # 메인 애플리케이션 로직
 def main():       
-    # 데이터 로드
+    # 데이터 로드 부분 수정
     df = None
-    file_path = './attendance.csv'
+    file_path = './attendance.csv'  # 파일의 정확한 경로 지정
+
     try:
-        # 기본적으로 attendance.csv 파일 로드 시도
+        # 지정된 경로에서 CSV 파일 로드 시도
         df = pd.read_csv(file_path, encoding='utf-8')
-        st.success("attendance.csv 파일이 성공적으로 로드되었습니다.")
-    except Exception as e:
-        # 기본 파일 로드 실패 시 사용자 업로드 확인
+        st.success(f"{file_path} 파일이 성공적으로 로드되었습니다.")
+    except UnicodeDecodeError:
+        # UTF-8로 읽기 실패 시 다른 인코딩 시도
+        try:
+            df = pd.read_csv(file_path, encoding='cp949')
+            st.success(f"{file_path} 파일이 성공적으로 로드되었습니다.")
+        except UnicodeDecodeError:
+            try:
+                df = pd.read_csv(file_path, encoding='euc-kr')
+                st.success(f"{file_path} 파일이 성공적으로 로드되었습니다.")
+            except Exception as e:
+                st.error(f"지정된 파일을 읽는 중 오류가 발생했습니다: {e}")
+    except FileNotFoundError:
+        st.error(f"지정된 경로({file_path})에서 attendance.csv 파일을 찾을 수 없습니다.")
+        # 파일이 없을 경우 업로드 옵션 제공
         if uploaded_file is not None:
             df = process_csv_file(uploaded_file)
         else:
-            st.error("attendance.csv 파일을 찾을 수 없습니다. CSV 파일을 업로드해주세요.")
+            st.info("CSV 파일을 업로드해주세요.")
+    except Exception as e:
+        st.error(f"파일 로드 중 오류가 발생했습니다: {e}")
+        # 오류 발생 시 업로드 옵션 제공
+        if uploaded_file is not None:
+            df = process_csv_file(uploaded_file)
+        else:
+            st.info("CSV 파일을 업로드해주세요.")
     
     # 데이터 처리 및 분석
     if df is not None:
