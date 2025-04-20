@@ -130,11 +130,22 @@ def get_csv_download_link(df, filename):
 # 메인 애플리케이션 로직
 def main():       
     # 데이터 로드 부분
-    df = None
-    if uploaded_file is not None:
-        df = process_csv_file(uploaded_file)
-    else:
-        st.info("CSV 파일을 업로드해주세요.")
+    if file_path:
+        try:
+            # 다양한 인코딩 시도
+            encodings = ['utf-8', 'euc-kr', 'cp949']
+            for encoding in encodings:
+                try:
+                    df = pd.read_csv(file_path, encoding=encoding)
+                    st.success(f"파일이 성공적으로 로드되었습니다.")
+                    break
+                except UnicodeDecodeError:
+                    continue
+                
+            if df is None:
+                st.error("파일 인코딩을 확인할 수 없습니다.")
+        except Exception as e:
+            st.error(f"파일 로드 중 오류가 발생했습니다: {e}")
     
     # 데이터 처리 및 분석
     if df is not None:
