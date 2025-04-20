@@ -51,41 +51,6 @@ def process_csv_file(file):
         st.error(f"파일 처리 중 오류가 발생했습니다: {e}")
         return None
 
-# 샘플 데이터 생성 함수 (파일이 없을 때 사용)
-def create_sample_data():
-    departments = ['컴퓨터공학과', '소프트웨어학과', '정보통신공학과', '인공지능학과', '데이터사이언스학과']
-    majors = ['컴퓨터공학', '소프트웨어개발', '정보통신', '인공지능', '데이터분석']
-    lectures = ['파이썬 프로그래밍 기초', '데이터 분석 심화', '머신러닝 입문', '웹 개발 기초', '클라우드 컴퓨팅']
-    statuses = ['출석', '결석', '노쇼', '불참', 'X', '']  # 빈 값 추가
-    grades = ['1학년', '2학년', '3학년', '4학년']
-    
-    # 30명의 학생 데이터 생성
-    np.random.seed(42)
-    n_students = 30
-    
-    data = {
-        '번호': list(range(1, n_students + 1)),
-        '등록일자': [f'2025. {np.random.randint(1, 13)}. {np.random.randint(1, 29)} {"오전" if np.random.random() > 0.5 else "오후"} {np.random.randint(1, 12)}:{np.random.randint(0, 60):02d}:{np.random.randint(0, 60):02d}' for _ in range(n_students)],
-        '이름': [f'학생{i+1}' for i in range(n_students)],
-        '학과': np.random.choice(departments, n_students),
-        '전공': np.random.choice(majors, n_students),
-        '학번': [f'2023{str(i+1).zfill(4)}' for i in range(n_students)],
-        '학년': np.random.choice(grades, n_students),
-        '핸드폰': [f'010-{np.random.randint(1000, 9999)}-{np.random.randint(1000, 9999)}' for _ in range(n_students)],
-        '이메일': [f'student{i+1}@example.com' for i in range(n_students)],
-        '특강명': np.random.choice(lectures, n_students),
-        '출석여부': np.random.choice(statuses, n_students, p=[0.5, 0.1, 0.15, 0.05, 0.05, 0.15]),  # 빈 값 15% 확률
-        '비고': [''] * n_students
-    }
-    
-    # 일부 학생에게 비고 추가
-    for i in range(5):
-        idx = np.random.randint(0, n_students)
-        if data['출석여부'][idx] in ['노쇼', '결석', '']:
-            data['비고'][idx] = np.random.choice(['무단 불참', '사유 없음', '연락 불가'])
-    
-    return pd.DataFrame(data)
-
 # 노쇼 데이터 분석 함수
 def analyze_attendance_data(df):
     # 결측치 처리
